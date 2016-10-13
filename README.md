@@ -5,19 +5,20 @@ Demeter is a python library for reinforcement learning. It is a testbed for fast
 
 It is currently supports the following algorithms:
 
-* Derivative-free
-  * Cross-entropy
-
-* Policy Gradients
-  * REINFORCE
-  * REINFORCE with baseline
-  * Vanilla Actor Critic
++ Derivative-free
+  + Cross-entropy
++ Policy Gradients
+  + REINFORCE
+  + REINFORCE with baseline
+  + Vanilla Actor Critic
 
 It is __environment agnostic__, but contains example code for:
 
-* OpenAI gym 
++ OpenAI gym 
+  + Classic control
 
 Demeter is built on top of TensorFlow. It enables features such as computation graphs, automatic differentiation, and visualization with TensorBoard
+
 
 ## Components
 
@@ -26,6 +27,7 @@ Demeter is built with modularity, reusability, and code encapsulation in mind. A
 ### Agents
 
 The highest level of abstraction. Encapsulates the provided policy and (optionally) baseline. Performs any algorithm specific data exchange between policy and baselines in the case of actor-critic models.
+
 
 ### Policies
 
@@ -38,6 +40,7 @@ A collection of networks and linear regressors used in policies and baselines. T
 ### Baselines 
 
 Value estimators used in value estimation or actor-critic based algorithms. Responsible for returning value estimation prediction via `value_estimator.predict`
+
 
 ## Example
 
@@ -109,3 +112,5 @@ with tf.Session() as sess:
     # plotting
     stats.plot_batch_stats(args.plot_dir, args.experiment_name)
 ```
+
+
