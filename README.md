@@ -52,23 +52,18 @@ env = gym.make(args.env_name)
 state_dim = env.observation_space.shape[0]
 num_actions = env.action_space.n
 
+
 with tf.Session() as sess:
 
-    annealer = LinearAnnealer(
-            init_exp = args.anneal_init,
-            final_exp = args.anneal_final,
-            anneal_steps = args.anneal_steps)
-
     policy = DiscreteStochasticMLPPolicy(
-                network_name = "action-network",
-                sess = sess, 
-                optimizer = tf.train.AdamOptimizer(args.policy_learning_rate),
-                hidden_layers = args.hidden_sizes,
-                num_inputs = state_dim,
-                num_actions = num_actions,
-                annealer = annealer)
+        network_name = "action-network",
+        sess = sess,
+        optimizer = tf.train.AdamOptimizer(args.policy_learning_rate),
+        hidden_layers = args.hidden_sizes,
+        num_inputs = state_dim,
+        num_actions = num_actions)
 
-    writer = tf.train.SummaryWriter("/tmp/{}".format(args.experiment_name))
+    writer = tf.train.SummaryWriter(output_path)
 
     agent = REINFORCE(
         sess = sess,
@@ -78,39 +73,22 @@ with tf.Session() as sess:
         summary_every = 100,
         action_policy = policy)
 
-    tf.initialize_all_variables().run()
+    sampler = BatchSampler(
+        env = env,
+        policy = policy,
+        norm_reward = lambda x: 5.0 if x else -0.1,
+        discount = args.discount)
 
-    stats = Stats(args.batch_size, args.max_steps)
-
-    for i_batch in xrange(args.num_batches):
-        traj = BatchTrajectory()
-        
-        for i_eps in xrange(args.batch_size):
-            state = env.reset()
-
-            for t in xrange(args.max_steps):
-                action = policy.sample_action(state)
-
-                next_state, reward, is_terminal, info = env.step(action)
-
-                norm_reward = -10 if is_terminal else 0.1
-                traj.store_step(state.tolist(), action, norm_reward)
-                stats.store_reward(reward)
-
-                state = next_state
+    evaluator = BaseEvaluator(
+        agent = agent,
+        sampler = sampler,
+        batch_size = args.batch_size,
+        max_steps = args.max_steps,
+        num_batches = args.num_batches)
     
-                if is_terminal: break
-            
-            # discounts the rewards over a single episode
-            eps_rewards = traj.rewards[-t-1:]
-            traj.calc_and_store_discounted_returns(eps_rewards, args.discount) 
-
-            stats.mark_eps_finished(i_batch, i_eps)
-
-        agent.train(traj)
-
-    # plotting
-    stats.plot_batch_stats(args.plot_dir, args.experiment_name)
-```
+    # do 5 runs and save the averaged results
+    averaged_stats = evaluator.run_avg(5)
+    np.savez(output_path, stats=averaged_stats)
+```    
 
 
