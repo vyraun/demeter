@@ -70,9 +70,9 @@ class DiscreteStochasticMLPPolicy(object):
         """
         if self.annealer is None or not self.annealer.is_explore_step():
             action_probs = self.network.sess.run(
-                        self.network.logits, 
-                        feed_dict = {self.network.observations: [observation]}
-                    )[0]
+                self.network.logits, 
+                {self.network.observations: [observation]}
+            )[0]
             action = np.random.choice(np.arange(len(action_probs)), p = self.softmax(action_probs))
 
             return action

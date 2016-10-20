@@ -7,15 +7,13 @@ import numpy as np
 import tensorflow as tf
 
 from agents.vanilla_actor_critic import VanillaActorCritic
-from lib.batch_trajectory import BatchTrajectory
-from lib.stats import Stats
+from samplers.batch_sampler import BatchSampler
+from lib.evaluator import BaseEvaluator
 from policies.discrete_stochastic_mlp import DiscreteStochasticMLPPolicy
-from policies.annealers.linear_annealer import LinearAnnealer
 from baselines.mlp_value_estimator import MLPValueEstimator
 
 # arg parsing
 parser = argparse.ArgumentParser(description=None)
-parser.add_argument('-e', '--env_name', default='CartPole-v0', type=str, help='gym environment')
 parser.add_argument('-b', '--batch_size', default=1, type=int, help='batch size to use during learning')
 parser.add_argument('-nb', '--num_batches', default=1000, type=int, help='number of batches to use during learning')
 parser.add_argument('-m', '--max_steps', default=200, type=int, help='max number of steps to run for')
@@ -24,11 +22,8 @@ parser.add_argument('-vl', '--value_learning_rate', default=0.01, type=float, he
 parser.add_argument('-d', '--discount', default=0.99, type=float, help='reward discount rate to use')
 parser.add_argument('-g', '--gae_lambda', default=0.99, type=float, help='generalized advantage estimator lambda')
 parser.add_argument('-nh', '--hidden_sizes', default="", type=str, help='number of hidden units per layer in both nets (comma delimited)')
-parser.add_argument('-ai', '--anneal_init', default=0.0, type=float, help='initial exploration rate')
-parser.add_argument('-af', '--anneal_final', default=0.0, type=float, help='final exploration rate')
-parser.add_argument('-as', '--anneal_steps', default=0, type=float, help='number of steps to anneal over')
-parser.add_argument('-p', '--plot_dir', default='.', type=str, help='directory to save the reward plots')
-parser.add_argument('-ex', '--experiment_name', default='default', type=str, help='name of the experiment')
+parser.add_argument('-p', '--output_dir', default='../tmp', type=str, help='directory to save the reward plots')
+parser.add_argument('-ex', '--experiment_name', default='actor_critic_cartpole', type=str, help='name of the experiment')
 args = parser.parse_args()
 print(args)
 
@@ -37,35 +32,32 @@ np.random.seed(0)
 tf.set_random_seed(1234)
 
 # init gym
-env = gym.make(args.env_name)
+env = gym.make('CartPole-v0')
 
 # env vars
 state_dim = env.observation_space.shape[0]
 num_actions = env.action_space.n
 
-with tf.Session() as sess:
-    annealer = LinearAnnealer(
-            init_exp = args.anneal_init,
-            final_exp = args.anneal_final,
-            anneal_steps = args.anneal_steps)
+# paths
+output_path = args.output_dir + "/" + args.experiment_name
 
+with tf.Session() as sess:
     policy = DiscreteStochasticMLPPolicy(
-                network_name = "action-network",
-                sess = sess, 
-                optimizer = tf.train.AdamOptimizer(args.policy_learning_rate),
-                hidden_layers = args.hidden_sizes,
-                num_inputs = state_dim,
-                num_actions = num_actions,
-                annealer = annealer)
+        network_name = "action-network",
+        sess = sess,
+        optimizer = tf.train.AdamOptimizer(args.policy_learning_rate),
+        hidden_layers = args.hidden_sizes,
+        num_inputs = state_dim,
+        num_actions = num_actions)
 
     value_estimator = MLPValueEstimator(
-            network_name = "value-network",
-            sess = sess, 
-            optimizer = tf.train.AdamOptimizer(args.value_learning_rate),
-            hidden_layers = args.hidden_sizes,
-            num_inputs = state_dim)
+        network_name = "value-network",
+        sess = sess,
+        optimizer = tf.train.AdamOptimizer(args.value_learning_rate),
+        hidden_layers = args.hidden_sizes,
+        num_inputs = state_dim)
 
-    writer = tf.train.SummaryWriter("/tmp/{}".format(args.experiment_name))
+    writer = tf.train.SummaryWriter(output_path)
 
     agent = VanillaActorCritic(
         sess = sess,
@@ -78,36 +70,18 @@ with tf.Session() as sess:
         gae_lambda = args.gae_lambda
     )
 
-    tf.initialize_all_variables().run()
+    sampler = BatchSampler(
+        env = env,
+        policy = policy,
+        norm_reward = lambda x: -10.0 if x else 0.1,
+        discount = args.discount)
 
-    stats = Stats(args.batch_size, args.max_steps)
+    evaluator = BaseEvaluator(
+        agent = agent,
+        sampler = sampler,
+        batch_size = args.batch_size,
+        max_steps = args.max_steps,
+        num_batches = args.num_batches)
 
-    for i_batch in xrange(args.num_batches):
-        traj = BatchTrajectory()
-        
-        for i_eps in xrange(args.batch_size):
-            state = env.reset()
-
-            for t in xrange(args.max_steps):
-                action = policy.sample_action(state)
-
-                next_state, reward, is_terminal, info = env.step(action)
-
-                norm_reward = -10 if is_terminal else 0.1
-                traj.store_step(list(state), action, norm_reward)
-                stats.store_reward(reward)
-
-                state = next_state
-    
-                if is_terminal: break
-            
-            # discounts the rewards over a single episode
-            eps_rewards = traj.rewards[-t-1:]
-            traj.calc_and_store_discounted_returns(eps_rewards, args.discount) 
-
-            stats.mark_eps_finished(i_batch, i_eps)
-           
-        agent.train(traj)
-
-    # plotting
-    stats.plot_batch_stats(args.plot_dir, args.experiment_name)
+    averaged_stats = evaluator.run_avg(5)
+    np.savez(output_path, stats=averaged_stats)

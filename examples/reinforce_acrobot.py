@@ -15,12 +15,12 @@ from policies.discrete_stochastic_mlp import DiscreteStochasticMLPPolicy
 parser = argparse.ArgumentParser(description=None)
 parser.add_argument('-b', '--batch_size', default=1, type=int, help='batch size to use during learning')
 parser.add_argument('-nb', '--num_batches', default=1000, type=int, help='number of batches to use during learning')
-parser.add_argument('-m', '--max_steps', default=200, type=int, help='max number of steps to run for')
+parser.add_argument('-m', '--max_steps', default=1000, type=int, help='max number of steps to run for')
 parser.add_argument('-pl', '--policy_learning_rate', default=0.1, type=float, help='policy network learning rate')
 parser.add_argument('-d', '--discount', default=0.99, type=float, help='reward discount rate to use')
 parser.add_argument('-nh', '--hidden_sizes', default="", type=str, help='number of hidden units per layer (comma delimited)')
-parser.add_argument('-p', '--output_dir', default='../tmp', type=str, help='directory to save the reward plots')
-parser.add_argument('-ex', '--experiment_name', default='reinforce_cartpole', type=str, help='name of the experiment')
+parser.add_argument('-p', '--output_dir', default='../tmp', type=str, help='directory to save the reward outputs')
+parser.add_argument('-ex', '--experiment_name', default='reinforce_acrobot', type=str, help='name of the experiment')
 args = parser.parse_args()
 print(args)
 
@@ -29,7 +29,7 @@ np.random.seed(0)
 tf.set_random_seed(1234)
 
 # init gym
-env = gym.make('CartPole-v0')
+env = gym.make('Acrobot-v0')
 
 # env vars
 state_dim = env.observation_space.shape[0]
