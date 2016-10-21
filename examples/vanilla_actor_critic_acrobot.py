@@ -67,7 +67,8 @@ with tf.Session() as sess:
         summary_every = 100,
         action_policy = policy,
         value_estimator = value_estimator,
-        gae_lambda = args.gae_lambda
+        gae_lambda = args.gae_lambda,
+        discount = args.discount
     )
 
     sampler = BatchSampler(
@@ -83,5 +84,5 @@ with tf.Session() as sess:
         max_steps = args.max_steps,
         num_batches = args.num_batches)
 
-    averaged_stats = evaluator.run_avg(5)
-    np.savez(output_path, stats=averaged_stats)
+    averaged_stats = evaluator.run_avg(10)
+    np.savez(output_path, stats=[averaged_stats])

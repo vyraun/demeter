@@ -81,5 +81,5 @@ with tf.Session() as sess:
         max_steps = args.max_steps,
         num_batches = args.num_batches)
 
-    averaged_stats = evaluator.run_avg(5)
-    np.savez(output_path, stats=averaged_stats)
+    averaged_stats = evaluator.run_avg(10)
+    np.savez(output_path, stats=[averaged_stats])

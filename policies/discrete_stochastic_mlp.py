@@ -33,7 +33,7 @@ class DiscreteStochasticMLPPolicy(object):
         # network
         self.network = FullyConnectedNN(
             name = network_name,
-            sess = sess, 
+            sess = sess,
             optimizer = optimizer,
             hidden_layers = "",
             num_inputs = num_inputs,
@@ -52,7 +52,7 @@ class DiscreteStochasticMLPPolicy(object):
         # summary
         self.summary_op = tf.scalar_summary("policy_loss", self.loss)
 
-    def softmax(self,x):
+    def softmax(self, x):
         e_x = np.exp(x - np.max(x))
         out = e_x / e_x.sum()
         return out
@@ -61,7 +61,7 @@ class DiscreteStochasticMLPPolicy(object):
         """
         Samples an action from \pi_\theta(a|s)
 
-        tf ops are eliminated on purpose here since this is a hot code path and 
+        tf ops are eliminated on purpose here since this is a hot code path and
         were optimizing for CPU usage...or maybe tf.multinomial is just slow in general.
 
         Using TF ops:
@@ -70,7 +70,7 @@ class DiscreteStochasticMLPPolicy(object):
         """
         if self.annealer is None or not self.annealer.is_explore_step():
             action_probs = self.network.sess.run(
-                self.network.logits, 
+                self.network.logits,
                 {self.network.observations: [observation]}
             )[0]
             action = np.random.choice(np.arange(len(action_probs)), p = self.softmax(action_probs))
@@ -82,7 +82,7 @@ class DiscreteStochasticMLPPolicy(object):
 
     def train(self, states, actions, targets, summary_op):
         _, summary_str = self.sess.run([
-            self.train_op, 
+            self.train_op,
             summary_op
         ], {
             self.network.observations: states,

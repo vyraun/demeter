@@ -1,11 +1,8 @@
-from __future__ import print_function
 from os import sys, path
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 import tensorflow as tf
-import numpy as np
 
-from lib import utils
 from . import base_agent
 
 class REINFORCE(base_agent.BaseAgent):
@@ -24,7 +21,7 @@ class REINFORCE(base_agent.BaseAgent):
         # placeholders
         self.actions = tf.placeholder(tf.int32, [None, 1], "actions")
         self.returns = tf.placeholder(tf.float32, [None, 1], "returns")
-        
+
     def train(self, traj):
 
         summary = self.action_policy.train(traj.states, traj.actions, traj.returns, self.action_policy.summary_op)

@@ -1,10 +1,4 @@
-from collections import defaultdict
-from functools import partial
-
-import numpy as np
 import tensorflow as tf
-
-from . import utils
 
 class BaseAgent(object):
     """
@@ -15,7 +9,7 @@ class BaseAgent(object):
                        num_actions,
                        summary_writer=None,
                        summary_every=100):
-        
+
         # tf
         self.sess = sess
 
@@ -44,9 +38,8 @@ class BaseAgent(object):
 
     def write_scalar_summaries(self, summaries):
         calculate_summaries = self.train_iter % self.summary_every == 0 and self.summary_writer is not None
-        
+
         # emit summaries
         if calculate_summaries:
             for summary in summaries:
                 self.summary_writer.add_summary(summary, self.train_iter)
-

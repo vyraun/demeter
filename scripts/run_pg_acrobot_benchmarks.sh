@@ -7,7 +7,7 @@ pushd $DEMETER_HOME/examples
 python reinforce_acrobot.py \
   --batch_size 1 \
   --num_batches 1000 \
-  --max_steps 1000 \
+  --max_steps 200 \
   --policy_learning_rate 0.01 \
   --discount 0.99 \
   --hidden_sizes '' \
@@ -18,7 +18,7 @@ python reinforce_acrobot.py \
 python reinforce_baseline_acrobot.py \
   --batch_size 1 \
   --num_batches 1000 \
-  --max_steps 1000 \
+  --max_steps 200 \
   --policy_learning_rate 0.01 \
   --value_learning_rate 0.1 \
   --discount 0.99 \
@@ -30,7 +30,7 @@ python reinforce_baseline_acrobot.py \
 python vanilla_actor_critic_acrobot.py \
   --batch_size 1 \
   --num_batches 1000 \
-  --max_steps 1000 \
+  --max_steps 200 \
   --policy_learning_rate 0.01 \
   --value_learning_rate 0.1 \
   --discount 0.99 \
